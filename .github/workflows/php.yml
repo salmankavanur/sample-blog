@@ -1,39 +1,38 @@
-name: PHP Composer
+name: Build and deploy Laravel project to GitHub Pages
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
-permissions:
-  contents: read
+    branches:
+      - master  # Change this to your main branch
 
 jobs:
-  build:
-
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v2
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'  # Adjust PHP version as needed
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      - name: Build Laravel assets (if needed)
+        run: php artisan build  # Replace with your build command if you have one
 
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
+      - name: Build static files (e.g., for public directory)
+        run: |
+          # Build your static files here, e.g., compile assets, generate HTML files, etc.
+          # This could include running npm install and npm run production for asset compilation
 
-    # - name: Run test suite
-    #   run: composer run-script test
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.2.0
+        with:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages  # Or any other branch you want to deploy to
+          FOLDER: public  # Specify the folder to deploy, e.g., the public directory of Laravel
+
+      # Additional steps like testing can be added here if needed
